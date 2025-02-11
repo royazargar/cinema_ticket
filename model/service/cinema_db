@@ -1,0 +1,102 @@
+CREATE DATABASE IF NOT EXISTS cinema_db;
+USE cinema_db;
+
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE
+);
+
+INSERT INTO roles (name) VALUES ('admin'), ('customer');
+
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role_id  INT NOT NULL DEFAULT 2,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS halls (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    seat_count INT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE IF NOT EXISTS movies (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    genre VARCHAR(100) NOT NULL,
+    duration INT NOT NULL,
+    description TEXT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE showtimes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    movie_id INT NOT NULL,
+    hall_id INT NOT NULL,
+    start_time TIME NOT NULL,
+    available_seats INT NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    movie_duration INT NOT NULL, -- مدت زمان فیلم به دقیقه
+    ticket_price DECIMAL(10,2) NOT NULL, -- قیمت بلیت
+    is_deleted BOOLEAN DEFAULT FALSE,
+
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    FOREIGN KEY (hall_id) REFERENCES halls(id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    showtime_id INT NOT NULL,
+    seat_number INT NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    is_paid BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE reservations (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    movie_id INT NOT NULL,
+    showtime_id INT NOT NULL,
+    ticket_count INT NOT NULL CHECK (ticket_count > 0),
+    status ENUM('pending', 'confirmed', 'canceled') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (movie_id) REFERENCES movies(id) ON DELETE CASCADE,
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(id) ON DELETE CASCADE
+);
+
+CREATE TABLE payments (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    user_id         INT NOT NULL,
+    reservation_id  INT NOT NULL,
+    amount          DECIMAL(10,2) NOT NULL,
+    payment_status  ENUM('pending', 'completed', 'failed') NOT NULL DEFAULT 'pending',
+    payment_date    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_payments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_payments_reservation FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
+);
+
+CREATE TABLE ticket_bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    showtime_id INT NOT NULL,
+    seats_reserved INT NOT NULL,
+    total_price DECIMAL(10,2) NOT NULL,
+    seat_numbers TEXT NOT NULL,
+    booking_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_canceled BOOLEAN DEFAULT FALSE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(id) ON DELETE CASCADE
+);
+
+ALTER TABLE users ADD COLUMN email VARCHAR(255) NOT NULL;
