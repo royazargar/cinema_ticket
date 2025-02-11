@@ -9,9 +9,7 @@ class ShowtimeController(BaseController):
 
     @BaseController.exception_handler
     def is_showtime_conflicting(self, hall_id, start_time, start_date, movie_duration):
-        """
-        بررسی می‌کند که آیا در بازه زمانی مشخص، سانسی در سالن موردنظر ثبت شده یا خیر.
-        """
+
         query = """
             SELECT id FROM showtimes 
             WHERE hall_id = %s 
